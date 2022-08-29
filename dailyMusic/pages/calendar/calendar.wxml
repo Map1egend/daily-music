@@ -1,0 +1,4 @@
+<!--pages/calendar/calendar.wxml-->
+<view class="calendar-container">
+  <music></music>
+</view>

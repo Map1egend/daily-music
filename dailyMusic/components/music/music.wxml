@@ -1,0 +1,26 @@
+<!--components/music/music.wxml-->
+<view class="music-container">
+  <view class="music-flex">
+    <view class="left">
+      <image src="../../assets/img/jinx.jpeg" mode="aspectFill" style="width: 268px; height: 268px;" />
+      <view class="modal"></view>
+    </view>
+    <view class="right">
+      <view class="name">
+        <text>Turn</text>
+      </view>
+      <view class="lyric">
+        <text>{{ activeLyric }}</text>
+      </view>
+      <view class="controller">
+        <view class="bar">
+          <view class="progress" style="width: {{ playProgress }}"></view>
+          <view class="ball" style="left: {{ progressBall }};" bindtouchmove="controlProgress"></view>
+        </view>
+        <view class="left-arrow"></view>
+        <view class="play"></view>
+        <view class="right-arrow"></view>
+      </view>
+    </view>
+  </view>
+</view>
