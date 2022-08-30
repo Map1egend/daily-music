@@ -1,37 +1,30 @@
 // components/music/music.ts
+let barWidth = 0
+let barLeft = 0
+let music = {
+  duration: 0
+}
+let audioContext = null
+
 Component({
   lifetimes: {
     ready() {
       console.log('music created')
-      const audioContext = wx.createInnerAudioContext({ useWebAudioImplement: false })
+      audioContext = wx.createInnerAudioContext({ useWebAudioImplement: false })
       audioContext.src = 'assets/暴躁的兔子 - 心碎莫扎特.mp3'
-      
+      audioContext.autoplay = true
       audioContext.onCanplay(() => {
-        audioContext.play()
-        console.log('音乐播放')
+        this.setData({
+          paused: false
+        })
+        music.duration = audioContext.duration
       })
       const query = wx.createSelectorQuery().in(this)
-      let barWidth = 0
       query.select('.bar').boundingClientRect(function (res) {
         barWidth = res.width
+        barLeft = res.left
       }).exec()
-      audioContext.onTimeUpdate(() => {
-        const time = this.normalizeTime(audioContext.currentTime).toString()
-        const playedRatio = audioContext.currentTime / audioContext.duration
-        this.setData({
-          playProgress: 100 * playedRatio + '%',
-          progressBall: playedRatio * barWidth - 8 + 'px'
-        })
-        for(let i = 0; i < this.data.lyricList.length; i++) {
-
-          if (this.compareTime(time, this.data.lyricList[i].time) !== this.compareTime(time, this.data.lyricList[i + 1]?.time)) {
-            this.setData({
-              activeLyric: this.data.lyricList[i].content
-            })
-            break
-          }
-        }
-      })
+      audioContext.onTimeUpdate(() => this.timeUpdateListener(this))
       const lyricArr = this.data.lyric.split('\n')
       const lyricMap = []
       lyricArr.forEach(lyric => {
@@ -64,13 +57,31 @@ Component({
     lyricList: [],
     activeLyric: '我们去抓水母吧',
     playProgress: 0,
-    progressBall: '-8px'
+    progressBall: '-8px',
+    paused: false
   },
 
   /**
    * 组件的方法列表
    */
   methods: {
+    timeUpdateListener (that) {
+      const time = that.normalizeTime(audioContext.currentTime).toString()
+      const playedRatio = audioContext.currentTime / audioContext.duration
+      that.setData({
+        playProgress: 100 * playedRatio + '%',
+        progressBall: playedRatio * barWidth - 8 + 'px'
+      })
+      for(let i = 0; i < that.data.lyricList.length; i++) {
+
+        if (that.compareTime(time, that.data.lyricList[i].time) !== that.compareTime(time, that.data.lyricList[i + 1]?.time)) {
+          that.setData({
+            activeLyric: that.data.lyricList[i].content
+          })
+          break
+        }
+      }
+    },
     normalizeTime (time: number): string {
       const integer = Math.floor(time)
       const m = Math.floor(integer / 60).toString()
@@ -100,8 +111,36 @@ Component({
         }
       }
     },
+    handleThouchStart () {
+      audioContext.offTimeUpdate(() => this.timeUpdateListener(this))
+    },
+    handleThouchEnd () {
+      audioContext.onTimeUpdate(() => this.timeUpdateListener(this))
+    },
     controlProgress (touchEvent) {
-      console.log(touchEvent)
+      let offsetLeft = touchEvent.touches[0].pageX - barLeft
+      if (offsetLeft < 0) offsetLeft = -8
+      if (offsetLeft > barWidth) offsetLeft = barWidth - 8
+      const currentTime = offsetLeft / barWidth * music.duration
+      this.setData({
+        playProgress: 100 * offsetLeft / barWidth + '%',
+        progressBall: offsetLeft + 'px'
+      })
+      audioContext.seek(currentTime)
+    },
+    play () {
+      console.log(this.data.paused, audioContext.paused)
+      if (audioContext.paused) {
+        audioContext.play()
+        this.setData({
+          paused: false
+        })
+      } else {
+        audioContext.pause()
+        this.setData({
+          paused: true
+        })
+      }
     }
   }
 })

@@ -3,7 +3,9 @@
   <view class="music-flex">
     <view class="left">
       <image src="../../assets/img/jinx.jpeg" mode="aspectFill" style="width: 268px; height: 268px;" />
-      <view class="modal"></view>
+      <view class="modal" wx:if="{{paused}}" bind:tap="play">
+        <text class="svg-play play"></text>
+      </view>
     </view>
     <view class="right">
       <view class="name">
@@ -13,13 +15,22 @@
         <text>{{ activeLyric }}</text>
       </view>
       <view class="controller">
-        <view class="bar">
-          <view class="progress" style="width: {{ playProgress }}"></view>
-          <view class="ball" style="left: {{ progressBall }};" bindtouchmove="controlProgress"></view>
+        <view class="bar-wrapper">
+          <view class="bar">
+            <view class="progress" style="width: {{ playProgress }}"></view>
+            <view class="ball" style="left: {{ progressBall }};" bind:touchmove="controlProgress"></view>
+          </view>
         </view>
-        <view class="left-arrow"></view>
-        <view class="play"></view>
-        <view class="right-arrow"></view>
+        <view class="left-arrow">
+          <text class="svg-pre svg"></text>
+        </view>
+        <view class="play" bind:tap="play">
+          <text class="svg-play svg" wx:if="{{!paused}}"></text>
+          <text class="svg-pause svg" wx:else></text>
+        </view>
+        <view class="right-arrow">
+          <text class="svg-next svg"></text>
+        </view>
       </view>
     </view>
   </view>
