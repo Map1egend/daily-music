@@ -5,7 +5,7 @@ Page({
    * 页面的初始数据
    */
   data: {
-
+    currentDay: ''
   },
 
   /**
@@ -19,7 +19,11 @@ Page({
    * 生命周期函数--监听页面初次渲染完成
    */
   onReady() {
-
+    const today = new Date()
+    console.log(this)
+    this.setData({
+        currentDay: `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`
+    })
   },
 
   /**
@@ -62,5 +66,10 @@ Page({
    */
   onShareAppMessage() {
 
+  },
+  bindDateChange: function(e) {
+      this.setData({
+          currentDay: e.detail.value
+      })
   }
 })

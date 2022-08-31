@@ -1,4 +1,9 @@
 <!--pages/calendar/calendar.wxml-->
 <view class="calendar-container">
-  <music></music>
+  <picker mode="date" value="{{currentDay}}" start="2022-08-01" end="2022-09-30" bindchange="bindDateChange">
+    <view class="picker">
+      {{ currentDay }}
+    </view>
+  </picker>
+  <music date="{{ currentDay }}"></music>
 </view>

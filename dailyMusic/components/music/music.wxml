@@ -2,7 +2,7 @@
 <view class="music-container">
   <view class="music-flex">
     <view class="left">
-      <image src="../../assets/img/jinx.jpeg" mode="aspectFill" style="width: 268px; height: 268px;" />
+      <image src="{{ coverUrl }}" mode="aspectFill" style="width: 268px; height: 268px;" />
       <view class="modal" wx:if="{{paused}}" bind:tap="play">
         <text class="svg-play play"></text>
       </view>
