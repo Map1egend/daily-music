@@ -1,44 +1,13 @@
 // components/music/music.ts
 import http from '../../utils/http'
 
-let barWidth = 0
-let barLeft = 0
-let music = {
-  duration: 0
-}
-let audioContext: InnerAudioContext = null
-
 Component({
+  options: {
+    pureDataPattern: /^_/ // 指定所有 _ 开头的数据字段为纯数据字段
+  },
   lifetimes: {
     ready() {
       console.log('music created')
-      /* audioContext = wx.createInnerAudioContext({ useWebAudioImplement: false })
-      audioContext.src = 'http://127.0.0.1:3000/daily/1661904000000/audio.mp3'
-      audioContext.autoplay = true
-      audioContext.onCanplay(() => {
-        this.setData({
-          paused: false
-        })
-        music.duration = audioContext.duration
-      })
-      const query = wx.createSelectorQuery().in(this)
-      query.select('.bar').boundingClientRect(function (res) {
-        barWidth = res.width
-        barLeft = res.left
-      }).exec()
-      audioContext.onTimeUpdate(() => this.timeUpdateListener(this))
-      const lyricArr = this.data.lyric.split('\n')
-      const lyricMap: Array<{ time: string, content: string}> = []
-      lyricArr.forEach(lyric => {
-        if (lyric) {
-          const time: string = lyric.match(/\d{2}:\d{2}.\d{3}/)![0]
-          const content: string = lyric.slice(11)
-          lyricMap.push({ time, content })
-        }
-      })
-      this.setData({
-        lyricList: lyricMap
-      }) */
     },
     detached () {
       console.log('组件实例从页面节点树移除')
@@ -57,6 +26,9 @@ Component({
    * 组件的初始数据
    */
   data: {
+    _barWidth: 0,
+    _barLeft: 0,
+    _audioContext: null,
     audioUrl: '',
     coverUrl: '',
     bgiUrl: '',
@@ -73,11 +45,11 @@ Component({
    */
   methods: {
     timeUpdateListener (that) {
-      const time = that.normalizeTime(audioContext.currentTime).toString()
-      const playedRatio = audioContext.currentTime / audioContext.duration
+      const time = that.normalizeTime(this.data._audioContext.currentTime).toString()
+      const playedRatio = this.data._audioContext.currentTime / this.data._audioContext.duration
       that.setData({
         playProgress: 100 * playedRatio + '%',
-        progressBall: playedRatio * barWidth - 8 + 'px'
+        progressBall: playedRatio * this.data._barWidth - 8 + 'px'
       })
       for(let i = 0; i < that.data.lyricList.length; i++) {
 
@@ -119,31 +91,30 @@ Component({
       }
     },
     handleThouchStart () {
-      audioContext.offTimeUpdate(() => this.timeUpdateListener(this))
+      this.data._audioContext.offTimeUpdate(() => this.timeUpdateListener(this))
     },
     handleThouchEnd () {
-      audioContext.onTimeUpdate(() => this.timeUpdateListener(this))
+      this.data._audioContext.onTimeUpdate(() => this.timeUpdateListener(this))
     },
     controlProgress (touchEvent) {
-      let offsetLeft = touchEvent.touches[0].pageX - barLeft
+      let offsetLeft = touchEvent.touches[0].pageX - this.data._barLeft
       if (offsetLeft < 0) offsetLeft = -8
-      if (offsetLeft > barWidth) offsetLeft = barWidth - 8
-      const currentTime = offsetLeft / barWidth * music.duration
+      if (offsetLeft > this.data._barWidth) offsetLeft = this.data._barWidth - 8
+      const currentTime = offsetLeft / this.data._barWidth * this.data._audioContext.duration
       this.setData({
-        playProgress: 100 * offsetLeft / barWidth + '%',
+        playProgress: 100 * offsetLeft / this.data._barWidth + '%',
         progressBall: offsetLeft + 'px'
       })
-      audioContext.seek(currentTime)
+      this.data._audioContext.seek(currentTime)
     },
     play () {
-      console.log(this.data.paused, audioContext.paused)
-      if (audioContext.paused) {
-        audioContext.play()
+      if (this.data._audioContext.paused) {
+        this.data._audioContext.play()
         this.setData({
           paused: false
         })
       } else {
-        audioContext.pause()
+        this.data._audioContext.pause()
         this.setData({
           paused: true
         })
@@ -159,28 +130,27 @@ Component({
       return +publishTime + ''
     },
     initAudio () {
-      if(audioContext) audioContext.destroy()
-      audioContext = wx.createInnerAudioContext({ useWebAudioImplement: false })
-      audioContext.src = this.data.audioUrl
-      audioContext.autoplay = true
-      audioContext.onCanplay(() => {
+      if(this.data._audioContext) this.data._audioContext.destroy()
+      this.data._audioContext = wx.createInnerAudioContext({ useWebAudioImplement: false })
+      this.data._audioContext.src = this.data.audioUrl
+      this.data._audioContext.autoplay = true
+      this.data._audioContext.onCanplay(() => {
         this.setData({
-          paused: false
+          paused: false,
         })
-        music.duration = audioContext.duration
       })
       const query = wx.createSelectorQuery().in(this)
-      query.select('.bar').boundingClientRect(function (res) {
-        barWidth = res.width
-        barLeft = res.left
+      query.select('.bar').boundingClientRect((res) => {
+        this.setData({
+          _barLeft: res.left,
+          _barWidth: res.width
+        })
       }).exec()
-      audioContext.onTimeUpdate(() => this.timeUpdateListener(this))
+      this.data._audioContext.onTimeUpdate(() => this.timeUpdateListener(this))
       const lyricArr = this.data.lyric.split('\n')
-      console.log(this.data.lyric)
       const lyricMap: Array<{ time: string, content: string}> = []
       lyricArr.forEach(lyric => {
         if (lyric) {
-          console.log(lyric, lyric.match(/\d{2}:\d{2}\.\d{3}/))
           const time: string = lyric.match(/\d{2}:\d{2}\.\d{1,3}/)![0]
           const content: string = lyric.slice(11)
           lyricMap.push({ time, content })
@@ -193,22 +163,21 @@ Component({
   },
   observers: {
     date: function (newDate) {
-      console.log(newDate)
-        http('/music/song/url', {
-          id: this.getId(newDate)
-        }).then((res: any) => {
-          console.log(res)
-          if (res.statusCode === 200) {
-            let { cover, audio, lyric, bgi } = res.data
-            this.setData({
-              audioUrl: audio,
-              coverUrl: cover,
-              bgiUrl: bgi,
-              lyric
-            })
-            this.initAudio()
-          }
-        })
+      if (!newDate) return
+      http('/music/song/url', {
+        id: this.getId(newDate)
+      }).then((res: any) => {
+        if (res.statusCode === 200 && res.data.status === 'success') {
+          let { cover, audio, lyric, bgi } = res.data.message
+          this.setData({
+            audioUrl: audio,
+            coverUrl: cover,
+            bgiUrl: bgi,
+            lyric
+          })
+          this.initAudio()
+        }
+      })
     }
   }
 })

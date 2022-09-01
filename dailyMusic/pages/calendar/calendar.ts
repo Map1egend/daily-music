@@ -20,7 +20,6 @@ Page({
    */
   onReady() {
     const today = new Date()
-    console.log(this)
     this.setData({
         currentDay: `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`
     })
